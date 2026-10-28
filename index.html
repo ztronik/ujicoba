@@ -871,7 +871,7 @@
     }
 
 <script>
-const SCRIPT_URL = "MASUKKAN_URL_WEB_APP_GOOGLE_SCRIPT_ANDA_DISINI";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyfDzaXFatta-Il1whNx9ZCy9-XbfwcS0cbMHJ_T7xADOSQo06Az7eeFqRDDIj57_K9uw/exec";
 
 // Generate atau ambil Device ID unik dari localStorage
 let deviceId = localStorage.getItem("z_device_id");
@@ -884,7 +884,6 @@ if (!deviceId) {
 window.addEventListener("DOMContentLoaded", () => {
     const savedKey = localStorage.getItem("z_license_key");
     if (savedKey) {
-        // Jika sudah pernah login, sembunyikan modal dan mulai heartbeat
         document.getElementById("licenseModal").style.display = "none";
         startHeartbeat(savedKey);
     } else {
@@ -894,52 +893,58 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function verifyLicense() {
     const key = document.getElementById("licenseKeyInput").value.trim();
-    const msgDiv = document.getElementById("licenseMsg");
     const btn = document.getElementById("activateBtn");
-
+    
     if (!key) {
-        msgDiv.style.color = "red";
-        msgDiv.innerText = "Kode lisensi tidak boleh kosong!";
+        alert("⚠️ Kode lisensi tidak boleh kosong!");
         return;
     }
 
     btn.innerText = "Memverifikasi...";
     btn.disabled = true;
 
-    fetch(`${SCRIPT_URL}?action=login&key=${encodeURIComponent(key)}&deviceId=${deviceId}`)
+    // Menggunakan redirect: 'follow' agar aman dari aturan Google Apps Script
+    fetch(`${SCRIPT_URL}?action=login&key=${encodeURIComponent(key)}&deviceId=${deviceId}`, {
+        method: 'GET',
+        redirect: 'follow'
+    })
     .then(response => response.json())
     .then(data => {
+        btn.innerText = "Aktivasi & Masuk";
+        btn.disabled = false;
+        
         if (data.status === "success") {
+            alert("✅ Berhasil Masuk! " + data.message); // Pop-up berhasil
             localStorage.setItem("z_license_key", key);
             document.getElementById("licenseModal").style.display = "none";
             startHeartbeat(key);
         } else {
-            msgDiv.style.color = "red";
-            msgDiv.innerText = data.message;
-            btn.innerText = "Aktivasi & Masuk";
-            btn.disabled = false;
+            alert("❌ Gagal: " + data.message); // Pop-up jika salah / ditolak
         }
     })
     .catch(error => {
-        msgDiv.style.color = "red";
-        msgDiv.innerText = "Gagal terhubung ke server.";
+        console.error("Error:", error);
         btn.innerText = "Aktivasi & Masuk";
         btn.disabled = false;
+        alert("❌ Gagal terhubung ke server. Periksa kembali URL Google Script Anda.");
     });
 }
 
 function startHeartbeat(key) {
     // Kirim ping setiap 5 menit (300000 ms)
     setInterval(() => {
-        fetch(`${SCRIPT_URL}?action=heartbeat&key=${encodeURIComponent(key)}&deviceId=${deviceId}`)
+        fetch(`${SCRIPT_URL}?action=heartbeat&key=${encodeURIComponent(key)}&deviceId=${deviceId}`, {
+            method: 'GET',
+            redirect: 'follow'
+        })
         .then(res => res.json())
         .then(data => {
             if (data.status === "error") {
-                alert(data.message);
+                alert("⚠️ " + data.message);
                 localStorage.removeItem("z_license_key");
                 location.reload();
             }
-        });
+        }).catch(err => console.log("Heartbeat error"));
     }, 300000);
 }
 
@@ -948,9 +953,16 @@ function logoutLicense() {
     if (!key) return;
 
     if (confirm("Yakin ingin keluar dari perangkat ini?")) {
-        fetch(`${SCRIPT_URL}?action=logout&key=${encodeURIComponent(key)}&deviceId=${deviceId}`)
+        fetch(`${SCRIPT_URL}?action=logout&key=${encodeURIComponent(key)}&deviceId=${deviceId}`, {
+            method: 'GET',
+            redirect: 'follow'
+        })
         .then(res => res.json())
         .then(data => {
+            localStorage.removeItem("z_license_key");
+            location.reload();
+        })
+        .catch(err => {
             localStorage.removeItem("z_license_key");
             location.reload();
         });
