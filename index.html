@@ -869,7 +869,8 @@
             pdf.save(fileName);
         });
     }
-
+</script>
+</body>
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyfDzaXFatta-Il1whNx9ZCy9-XbfwcS0cbMHJ_T7xADOSQo06Az7eeFqRDDIj57_K9uw/exec";
 
@@ -894,7 +895,7 @@ window.addEventListener("DOMContentLoaded", () => {
 function verifyLicense() {
     const key = document.getElementById("licenseKeyInput").value.trim();
     const btn = document.getElementById("activateBtn");
-    
+
     if (!key) {
         alert("⚠️ Kode lisensi tidak boleh kosong!");
         return;
@@ -912,7 +913,7 @@ function verifyLicense() {
     .then(data => {
         btn.innerText = "Aktivasi & Masuk";
         btn.disabled = false;
-        
+
         if (data.status === "success") {
             alert("✅ Berhasil Masuk! " + data.message); // Pop-up berhasil
             localStorage.setItem("z_license_key", key);
@@ -969,6 +970,4 @@ function logoutLicense() {
     }
 }
 </script>
-</body>
-
 </html>
